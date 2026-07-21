@@ -127,7 +127,7 @@
                 <p class="text-xs text-gray-400 mt-1">Masukkan akun untuk menilai jawaban mahasiswi</p>
             </div>
 
-            <form id="loginForm" class="space-y-4">
+            <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4">
                 <div>
                     <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Username</label>
                     <input type="text" id="loginUsername" required class="w-full px-4 py-2.5 border border-pink-200 rounded-xl text-sm focus:outline-none focus:border-pink-400 bg-pink-50/10" placeholder="ustadzah">
@@ -275,12 +275,12 @@
         // CONFIG FIREBASE PROYEK PRETEST-TAJWID ANDA
         // =============================================================
         const firebaseConfig = {
-            apiKey: "SILAKAN_TEMPEL_API_KEY_ANDA_DI_SINI", // Dapatkan dari Pengaturan Proyek di Firebase Console
+            apiKey: "SILAKAN_TEMPEL_API_KEY_ANDA_DI_SINI", 
             authDomain: "pretest-tajwid.firebaseapp.com",
             projectId: "pretest-tajwid",
             storageBucket: "pretest-tajwid.appspot.com",
             messagingSenderId: "986444579022",
-            appId: "SILAKAN_TEMPEL_APP_ID_ANDA_DI_SINI" // Dapatkan dari Pengaturan Proyek di Firebase Console
+            appId: "SILAKAN_TEMPEL_APP_ID_ANDA_DI_SINI" 
         };
 
         // Inisialisasi Firebase
@@ -707,13 +707,13 @@
             }
         });
 
-        // MODAL LOGIN HANDLER
+        // MODAL LOGIN HANDLER (GLOBAL ACCESSIBLE)
         window.handleLogin = function(e) {
-            e.preventDefault();
+            if (e) e.preventDefault();
             const user = document.getElementById("loginUsername").value.trim();
             const pass = document.getElementById("loginPassword").value;
 
-            // Kredensial Ustadzah Sederhana (bisa Anda ubah sesuai keinginan)
+            // Kredensial Ustadzah (bisa diubah sesuai keinginan)
             if (user === "ustadzah" && pass === "tajwidok") {
                 document.getElementById("loginModal").classList.add("hidden");
                 document.getElementById("studentView").classList.add("hidden");
@@ -730,9 +730,6 @@
                 setTimeout(() => errDiv.classList.add("hidden"), 3000);
             }
         };
-
-        // Sambungkan form login ke fungsi handler
-        document.getElementById("loginForm").addEventListener("submit", handleLogin);
     </script>
 
     <!-- FUNGSI ANTARMUKA GLOBAL -->
@@ -745,7 +742,7 @@
 
         function closeStudentModal() {
             document.getElementById("studentSuccessModal").classList.add("hidden");
-            window.location.reload(); // Segarkan halaman untuk peserta baru
+            window.location.reload(); 
         }
 
         function handleLogout() {
