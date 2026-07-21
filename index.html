@@ -478,9 +478,9 @@
                 answersEssay,
                 pgCorrectCount: correctCount,
                 pgScore: pgScoreCalculated,
-                essayScore: 0, // diisi nanti oleh Ustadzah
-                totalScore: pgScoreCalculated, // awalnya sama dengan PG
-                durationSec: durationSec, // Simpan angka detik untuk pemeringkatan presisi
+                essayScore: 0, 
+                totalScore: pgScoreCalculated, 
+                durationSec: durationSec, 
                 durationText: durationText,
                 submittedAt: new Date(),
                 status: "Belum Diperiksa",
@@ -501,6 +501,7 @@
                 document.getElementById("quizForm").reset();
             } catch (err) {
                 alert("Gagal mengirim jawaban. Mohon cek kembali koneksi internet dan Aturan Keamanan Firestore Anda. Detail error: " + err.message);
+            } finally {
                 btnSubmit.disabled = false;
                 btnSubmit.innerHTML = "Kirim Jawaban Evaluasi 🌼";
             }
@@ -510,7 +511,7 @@
         let submissions = [];
         let activeGradingId = null;
 
-        function loadSubmissions() {
+        window.loadSubmissions = function() {
             const q = query(collection(db, "submissions"), orderBy("submittedAt", "desc"));
             onSnapshot(q, (snapshot) => {
                 submissions = [];
@@ -520,7 +521,7 @@
                 renderSubmissionList();
                 renderLeaderboard();
             });
-        }
+        };
 
         // RENDER PAPAN PERINGKAT (LEADERBOARD)
         function renderLeaderboard() {
@@ -713,7 +714,7 @@
             const user = document.getElementById("loginUsername").value.trim();
             const pass = document.getElementById("loginPassword").value;
 
-            // Kredensial Ustadzah (bisa diubah sesuai keinginan)
+            // Kredensial Ustadzah
             if (user === "ustadzah" && pass === "tajwidok") {
                 document.getElementById("loginModal").classList.add("hidden");
                 document.getElementById("studentView").classList.add("hidden");
@@ -723,7 +724,7 @@
                         🟢 Sesi Ustadzah Aktif
                     </span>
                 `;
-                loadSubmissions();
+                window.loadSubmissions();
             } else {
                 const errDiv = document.getElementById("loginError");
                 errDiv.classList.remove("hidden");
@@ -732,7 +733,7 @@
         };
     </script>
 
-    <!-- FUNGSI ANTARMUKA GLOBAL -->
+    <!-- FUNGSI ANTARMUKA GLOBAL (TANPA RELOAD) -->
     <script>
         function toggleLoginModal(show) {
             const modal = document.getElementById("loginModal");
@@ -742,11 +743,19 @@
 
         function closeStudentModal() {
             document.getElementById("studentSuccessModal").classList.add("hidden");
-            window.location.reload(); 
+            // Sembunyikan modal tanpa menyegarkan halaman
+            startTime = Date.now();
         }
 
         function handleLogout() {
-            window.location.reload();
+            // Kembali ke halaman utama tanpa melakukan reload halaman
+            document.getElementById("teacherView").classList.add("hidden");
+            document.getElementById("studentView").classList.remove("hidden");
+            document.getElementById("navRight").innerHTML = `
+                <button onclick="toggleLoginModal(true)" id="btnLoginView" class="bg-pink-100 hover:bg-pink-200 text-pink-700 text-xs font-semibold px-4 py-2 rounded-xl transition-all cursor-pointer">
+                    🔑 Masuk Ustadzah
+                </button>
+            `;
         }
 
         function switchGradingTab(tab) {
