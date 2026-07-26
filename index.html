@@ -47,6 +47,7 @@
                 <span id="navBarTitle" class="font-bold text-gray-800 text-sm md:text-base">Daarunnisaa</span>
             </div>
             <div id="navRight">
+                <!-- Tombol Login bawaan (akan diatur ulang secara dinamis oleh Firebase Auth State) -->
                 <button onclick="toggleLoginModal(true)" id="btnLoginView" class="theme-btn-sec bg-rose-100 hover:bg-rose-200 text-rose-700 text-xs font-semibold px-4 py-2 rounded-xl transition-all cursor-pointer">
                     Login
                 </button>
@@ -258,4 +259,211 @@
                     </div>
                 </div>
             </div>
-        </div>No response
+        </div>
+    </div>
+
+    <!-- MODAL SEARCH TEMA SOAL -->
+    <div id="topicSearchModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-xs flex items-center justify-center hidden z-50 px-4">
+        <div class="bg-white p-6 rounded-3xl max-w-md w-full shadow-2xl border border-rose-100 space-y-4">
+            <div class="flex justify-between items-center border-b border-rose-100 pb-3">
+                <h3 class="text-sm font-bold text-gray-800 uppercase">Cari & Pilih Tema Soal</h3>
+                <button onclick="closeTopicSearchModal()" class="text-gray-400 hover:text-gray-600 font-bold cursor-pointer">✕</button>
+            </div>
+            <input type="text" id="topicSearchInput" oninput="renderFilteredTopicsInModal()" placeholder="🔍 Ketik nama tema soal..." class="w-full px-4 py-2 border border-rose-200 rounded-xl text-xs bg-rose-50/10 focus:outline-none focus:border-rose-400">
+            <div id="modalTopicList" class="max-h-60 overflow-y-auto space-y-2 pr-1"></div>
+        </div>
+    </div>
+
+    <!-- MODAL SCANNER QR CODE -->
+    <div id="qrScannerModal" class="fixed inset-0 bg-gray-900/50 backdrop-blur-xs flex items-center justify-center hidden z-50 px-4">
+        <div class="bg-white p-6 rounded-3xl max-w-sm w-full shadow-2xl border border-rose-100 space-y-4 text-center">
+            <h3 class="text-sm font-bold text-gray-800">Scan QR Code Token Ujian</h3>
+            <div id="qrReader" class="w-full overflow-hidden rounded-2xl border border-rose-200"></div>
+            <button onclick="closeQrScannerModal()" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs font-semibold py-2 rounded-xl transition-all cursor-pointer">
+                Tutup Kamera
+            </button>
+        </div>
+    </div>
+
+    <!-- MODAL QR CODE TOKEN -->
+    <div id="qrDisplayModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-xs flex items-center justify-center hidden z-50 px-4">
+        <div class="bg-white p-6 rounded-3xl max-w-xs w-full text-center shadow-2xl border border-rose-100 space-y-4">
+            <h3 id="qrModalTopicTitle" class="text-sm font-bold text-gray-800">QR Code Token</h3>
+            <div id="qrcodeCanvas" class="flex justify-center p-3 bg-rose-50/50 rounded-2xl border border-rose-100"></div>
+            <p id="qrModalTokenDisplay" class="text-xs font-mono font-bold text-rose-600 uppercase tracking-widest"></p>
+            <button onclick="closeQrDisplayModal()" class="theme-btn-pri w-full bg-rose-500 hover:bg-rose-600 text-white text-xs font-semibold py-2 rounded-xl transition-all cursor-pointer">
+                Tutup
+            </button>
+        </div>
+    </div>
+
+    <!-- MODAL SUKSES SUBMIT -->
+    <div id="studentSuccessModal" class="fixed inset-0 bg-rose-900/30 backdrop-blur-xs flex items-center justify-center hidden z-50 px-4">
+        <div class="bg-white p-8 rounded-3xl max-w-md w-full text-center shadow-2xl border border-rose-100">
+            <span class="text-5xl">🎉</span>
+            <h3 class="text-xl font-bold text-gray-800 mt-4">Jawaban Berhasil Terkirim!</h3>
+            <p class="text-xs text-gray-500 mt-2">Terima kasih telah menyelesaikan evaluasi Tajwid. Jawaban Anda telah tersimpan secara online di Firebase.</p>
+            
+            <div class="my-6 p-4 bg-rose-50/80 rounded-2xl border border-rose-100 text-left space-y-2">
+                <div class="flex justify-between items-center text-xs">
+                    <span class="text-gray-500">Nama / NIM:</span>
+                    <span id="modalStudentName" class="font-bold text-gray-800"></span>
+                </div>
+                <div class="flex justify-between items-center text-xs">
+                    <span class="text-gray-500">Tema Soal:</span>
+                    <span id="modalStudentTopic" class="font-bold text-rose-600"></span>
+                </div>
+                <div class="flex justify-between items-center text-xs">
+                    <span class="text-gray-500">Waktu Pengerjaan:</span>
+                    <span id="modalStudentDuration" class="font-bold text-gray-800"></span>
+                </div>
+                <div class="flex justify-between items-center text-xs pt-1 border-t border-rose-200">
+                    <span class="text-gray-500">Skor Akhir:</span>
+                    <span id="modalStudentScore" class="font-extrabold text-rose-600 text-sm"></span>
+                </div>
+            </div>
+
+            <button onclick="closeStudentModal()" class="theme-btn-pri w-full bg-rose-500 hover:bg-rose-600 text-white text-xs font-semibold py-3 rounded-xl transition-all shadow-md cursor-pointer">
+                Selesai & Selesaikan Sesi
+            </button>
+        </div>
+    </div>
+
+    <!-- MODAL LOGIN PEMERIKSA -->
+    <div id="loginModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-xs flex items-center justify-center hidden z-50 px-4">
+        <div class="bg-white p-8 rounded-3xl max-w-sm w-full shadow-2xl border border-rose-100">
+            <div class="text-center mb-6">
+                <div class="w-12 h-12 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto mb-3 text-xl font-bold">🔐</div>
+                <h3 class="text-lg font-bold text-gray-850">Login Pemeriksa</h3>
+                <p class="text-xs text-gray-400 mt-1">Masukkan akun ustadzah untuk kelola soal & menilai</p>
+            </div>
+
+            <form id="loginForm" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Username / Nama (Email)</label>
+                    <input type="text" id="loginUsername" required class="w-full px-4 py-2.5 border border-rose-200 rounded-xl text-sm focus:outline-none focus:border-rose-400 bg-rose-50/10" placeholder="ustadzah">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Password</label>
+                    <input type="password" id="loginPassword" required class="w-full px-4 py-2.5 border border-rose-200 rounded-xl text-sm focus:outline-none focus:border-rose-400 bg-rose-50/10" placeholder="••••••••">
+                </div>
+                <div id="loginError" class="text-xs text-red-500 font-medium hidden text-center">
+                    Username atau password salah!
+                </div>
+                <button type="submit" class="theme-btn-pri w-full bg-rose-500 hover:bg-rose-600 text-white font-semibold py-2.5 rounded-xl text-sm transition-all shadow-md cursor-pointer">
+                    Masuk Mode Pemeriksa
+                </button>
+                <button type="button" onclick="toggleLoginModal(false)" class="w-full text-xs text-gray-400 hover:text-gray-600 pt-2 cursor-pointer">
+                    Batal
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL CUSTOM HEADER BAR & UI/UX CONFIG -->
+    <div id="headerConfigModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-xs flex items-center justify-center hidden z-50 px-4 overflow-y-auto py-6">
+        <div class="bg-white p-6 rounded-3xl max-w-lg w-full shadow-2xl border border-rose-100 space-y-4 my-auto">
+            <h3 class="text-sm font-bold text-gray-800 uppercase border-b border-rose-100 pb-2 flex items-center gap-2">
+                <span>🎨</span> Custom Tampilan Interface UI/UX & Header
+            </h3>
+            <form id="headerConfigForm" class="space-y-3">
+                <div class="bg-rose-50/30 p-3 rounded-2xl border border-rose-100 space-y-2">
+                    <p class="text-[11px] font-bold text-rose-600 uppercase">1. Teks & Judul Interface</p>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-500 uppercase mb-0.5">Judul Navbar Top</label>
+                            <input type="text" id="cfgNavTitle" required class="w-full px-3 py-1.5 border border-rose-200 rounded-xl text-xs bg-white">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-500 uppercase mb-0.5">Judul Utama Halaman</label>
+                            <input type="text" id="cfgMainTitle" required class="w-full px-3 py-1.5 border border-rose-200 rounded-xl text-xs bg-white">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-500 uppercase mb-0.5">Sub-Judul Evaluasi</label>
+                            <input type="text" id="cfgHeaderSubtitle" required class="w-full px-3 py-1.5 border border-rose-200 rounded-xl text-xs bg-white">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-500 uppercase mb-0.5">Nama Tombol Login</label>
+                            <input type="text" id="cfgBtnLoginText" value="Login" required class="w-full px-3 py-1.5 border border-rose-200 rounded-xl text-xs bg-white">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-500 uppercase mb-0.5">Nama Laman Ujian</label>
+                            <input type="text" id="cfgExamPageText" required class="w-full px-3 py-1.5 border border-rose-200 rounded-xl text-xs bg-white">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-500 uppercase mb-0.5">Nama Lembar Pemeriksaan</label>
+                            <input type="text" id="cfgGradingPageText" required class="w-full px-3 py-1.5 border border-rose-200 rounded-xl text-xs bg-white">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-500 uppercase mb-0.5">Teks Badge Navbar (Sesi Aktif)</label>
+                            <input type="text" id="cfgActiveSessionText" required class="w-full px-3 py-1.5 border border-rose-200 rounded-xl text-xs bg-white" placeholder="🟢 Sesi Ustadzah Aktif">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-500 uppercase mb-0.5">Teks Badge Mode Pemeriksa</label>
+                            <input type="text" id="cfgTeacherModeBadge" required class="w-full px-3 py-1.5 border border-rose-200 rounded-xl text-xs bg-white" placeholder="Mode Ustadzah & Manager Soal 🔥">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-500 uppercase mb-0.5">Quotes / Al-Hadits Header</label>
+                        <textarea id="cfgHeaderQuote" rows="2" required class="w-full px-3 py-1.5 border border-rose-200 rounded-xl text-xs bg-white"></textarea>
+                    </div>
+                </div>
+
+                <div class="bg-rose-50/30 p-3 rounded-2xl border border-rose-100 space-y-2">
+                    <p class="text-[11px] font-bold text-rose-600 uppercase">2. Tema Warna & Font Khusus UI/UX Modern</p>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-500 uppercase mb-0.5">Palet Warna UI Modern</label>
+                            <select id="cfgThemeColor" class="w-full px-3 py-1.5 border border-rose-200 rounded-xl text-xs font-semibold bg-white">
+                                <option value="rose">Modern Rose / Pink (Default)</option>
+                                <option value="emerald">Emerald Fresh / Hijau</option>
+                                <option value="indigo">Royal Indigo / Ungu</option>
+                                <option value="slate">Corporate Slate / Kelabu</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-500 uppercase mb-0.5">Pilihan Typography / Font</label>
+                            <select id="cfgThemeFont" class="w-full px-3 py-1.5 border border-rose-200 rounded-xl text-xs font-semibold bg-white">
+                                <option value="Plus Jakarta Sans">Plus Jakarta Sans (UI/UX Clean)</option>
+                                <option value="Inter">Inter (Sangat Sederhana & Scalable)</option>
+                                <option value="Outfit">Outfit (Modern Geometric)</option>
+                                <option value="Poppins">Poppins (Friendly Rounded)</option>
+                                <option value="Lexend">Lexend (Super Clear & Accessible)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex gap-2 pt-2">
+                    <button type="submit" class="theme-btn-pri flex-1 bg-rose-500 hover:bg-rose-600 text-white font-bold py-2.5 rounded-xl text-xs transition-all shadow-md cursor-pointer">
+                        Simpan Perubahan Interface
+                    </button>
+                    <button type="button" onclick="closeHeaderConfigModal()" class="px-4 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold py-2.5 rounded-xl text-xs transition-all cursor-pointer">
+                        Batal
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL FORM TAMBAH / EDIT SOAL -->
+    <div id="questionModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-xs flex items-center justify-center hidden z-50 px-4 overflow-y-auto py-8">
+        <div class="bg-white p-6 rounded-3xl max-w-lg w-full shadow-2xl border border-rose-100 space-y-4 my-auto">
+            <h3 id="questionModalTitle" class="text-lg font-bold text-gray-800 border-b border-rose-50 pb-2">Tambah Soal Baru</h3>
+            
+            <form id="questionForm" class="space-y-4">
+                <input type="hidden" id="qEditId">
+                
+                <div>
+                    <label class="block text-xs font-semibold text-rose-600 uppercase mb-1">Tema Soal</label>
+                    <select id="No response
