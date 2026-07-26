@@ -104,7 +104,7 @@
         </script>
 
         <main class="max-w-3xl mx-auto px-4 py-8">
-            <form id="quizForm" class="space-y-6" onsubmit="event.preventDefault();">
+            <form id="quizForm" class="space-y-6">
                 <!-- AKSES TOKEN & INFORMASI MAHASISWI -->
                 <div id="panelStudentInfo" class="theme-panel bg-white p-6 rounded-2xl shadow-xs border border-rose-100/60 space-y-4">
                     <h3 id="lblExamPageTitle" class="text-sm font-bold text-gray-800 uppercase tracking-wider border-b border-rose-50 pb-2">LAMAN UJIAN</h3>
@@ -185,7 +185,8 @@
             <div class="space-y-3">
                 <div>
                     <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Pilih Tema Soal</label>
-                    <select id="printTopicSelect" class="w-full px-3 py-2 border border-rose-200 rounded-xl text-xs font-bold bg-rose-50/20"></select>
+                    <select id="printTopicSelect" class="w-full px-3 py-2 border border-rose-200 rounded-xl text-xs font-bold bg-rose-50/20">
+                    </select>
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Pilih Format File Cetak</label>
@@ -203,65 +204,58 @@
         </div>
     </div>
 
-    <!-- MODAL SCANNER QR CODE -->
-    <div id="qrScannerModal" class="fixed inset-0 bg-gray-900/50 backdrop-blur-xs flex items-center justify-center hidden z-50 px-4">
-        <div class="bg-white p-6 rounded-3xl max-w-sm w-full shadow-2xl border border-rose-100 space-y-4 text-center">
-            <h3 class="text-sm font-bold text-gray-800">Scan QR Code Token Ujian</h3>
-            <div id="qrReader" class="w-full overflow-hidden rounded-2xl border border-rose-200"></div>
-            <button onclick="closeQrScannerModal()" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs font-semibold py-2 rounded-xl transition-all cursor-pointer">
-                Tutup Kamera
-            </button>
-        </div>
-    </div>
+    <!-- MODAL BACKUP & IMPORT SOAL -->
+    <div id="dataManageModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-xs flex items-center justify-center hidden z-50 px-4">
+        <div class="bg-white p-6 rounded-3xl max-w-lg w-full shadow-2xl border border-rose-100 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b border-rose-100 pb-3">
+                <h3 class="text-sm font-bold text-gray-800 uppercase flex items-center gap-2">📦 Backup, Import & Hapus Soal</h3>
+                <button onclick="closeDataManageModal()" class="text-gray-400 hover:text-gray-600 font-bold cursor-pointer">✕</button>
+            </div>
+            
+            <div class="space-y-4 text-xs">
+                <!-- EXPORT BACKUP -->
+                <div class="bg-rose-50/40 p-4 rounded-2xl border border-rose-100 space-y-2">
+                    <h4 class="font-bold text-rose-600 uppercase flex items-center gap-1.5">📥 1. Export / Backup Soal (JSON Format)</h4>
+                    <p class="text-gray-500">Unduh data soal terstruktur lengkap dengan kunci jawaban & bobot.</p>
+                    <div class="flex gap-2 pt-1">
+                        <select id="exportTopicSelect" class="flex-1 px-3 py-2 border border-rose-200 rounded-xl text-xs bg-white">
+                        </select>
+                        <button onclick="executeExportJson()" class="bg-rose-500 hover:bg-rose-600 text-white font-bold px-4 py-2 rounded-xl transition-all cursor-pointer">
+                            📥 Download Backup
+                        </button>
+                    </div>
+                </div>
 
-    <!-- MODAL SUKSES SUBMIT (DI-FIX) -->
-    <div id="studentSuccessModal" class="fixed inset-0 bg-rose-900/30 backdrop-blur-xs flex items-center justify-center hidden z-50 px-4">
-        <div class="bg-white p-8 rounded-3xl max-w-md w-full text-center shadow-2xl border border-rose-100 space-y-4">
-            <span class="text-4xl">🎉</span>
-            <h3 class="text-lg font-bold text-gray-800">Berhasil Dikirim!</h3>
-            <p class="text-xs text-gray-500">Jawaban evaluasi Anda telah berhasil disimpan di sistem.</p>
-            <button onclick="document.getElementById('studentSuccessModal').classList.add('hidden')" class="w-full bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold py-2.5 rounded-xl transition-all cursor-pointer">
-                Tutup
-            </button>
-        </div>
-    </div>
+                <!-- IMPORT SOAL -->
+                <div class="bg-rose-50/40 p-4 rounded-2xl border border-rose-100 space-y-2">
+                    <h4 class="font-bold text-rose-600 uppercase flex items-center gap-1.5">📤 2. Import Data Soal Masal (.JSON)</h4>
+                    <p class="text-gray-500">Pilih file JSON hasil backup untuk mengupload bank soal secara otomatis.</p>
+                    <input type="file" id="importJsonFile" accept=".json" class="w-full text-xs text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-rose-100 file:text-rose-700">
+                    <button onclick="executeImportJson()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl transition-all shadow-xs mt-2 cursor-pointer">
+                        📤 Upload & Import Soal
+                    </button>
+                </div>
 
-    <!-- FUNGSI JAVASCRIPT DASAR AGAR TOMBOL TERTENTU BISA MERESPON -->
-    <script>
-        function toggleLoginModal(show) {
-            alert("Fungsi Login dipanggil!");
-        }
+                <!-- HAPUS SOAL FIREBASE -->
+                <div class="bg-red-50/60 p-4 rounded-2xl border border-red-200 space-y-3">
+                    <h4 class="font-bold text-red-600 uppercase flex items-center gap-1.5">🗑️ 3. Pembersihan Bank Soal (Firebase)</h4>
+                    <p class="text-gray-500">Hapus soal secara masal dari database Firebase. Harap berhati-hati karena data tidak dapat dikembalikan setelah dihapus.</p>
+                    
+                    <div class="space-y-2 pt-1">
+                        <!-- HAPUS BERDASARKAN TEMA -->
+                        <div class="flex gap-2">
+                            <select id="deleteTopicSelect" class="flex-1 px-3 py-2 border border-red-200 rounded-xl text-xs bg-white font-medium text-gray-700">
+                            </select>
+                            <button onclick="executeDeleteQuestionsByTopic()" class="bg-amber-600 hover:bg-amber-700 text-white font-bold px-4 py-2 rounded-xl transition-all cursor-pointer whitespace-nowrap">
+                                🗑️ Hapus Per Tema
+                            </button>
+                        </div>
 
-        function openQrScannerModal() {
-            document.getElementById('qrScannerModal').classList.remove('hidden');
-        }
-
-        function closeQrScannerModal() {
-            document.getElementById('qrScannerModal').classList.add('hidden');
-        }
-
-        function closeEditTopicModal() {
-            document.getElementById('editTopicModal').classList.add('hidden');
-        }
-
-        function closePrintModal() {
-            document.getElementById('printModal').classList.add('hidden');
-        }
-
-        window.verifyAndLoadQuiz = function() {
-            const token = document.getElementById('inputTopicToken').value;
-            if(!token) {
-                alert("Silakan masukkan kode token terlebih dahulu!");
-                return;
-            }
-            alert("Memverifikasi token: " + token);
-            document.getElementById('studentIdentityPanel').classList.remove('hidden');
-            document.getElementById('studentQuestionsWrapper').classList.remove('hidden');
-        }
-
-        function saveStudentDraftAnswer() {
-            console.log("Menyimpan draft nama...");
-        }
-    </script>
-</body>
-</html>
+                        <!-- HAPUS SEMUA SOAL -->
+                        <button onclick="executeDeleteAllQuestions()" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 rounded-xl transition-all shadow-xs cursor-pointer flex items-center justify-center gap-1.5">
+                            🔥 Hapus SEMUA Soal di Firebase
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>No response
