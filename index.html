@@ -3,711 +3,307 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Evaluasi Pre-Test Tajwid & Laman Pemeriksa</title>
+    <title>📑 pojoksoal.me</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <!-- Google Fonts -->
+    <!-- Google Fonts Loaders -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Amiri&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link id="dynamicFontLink" href="https://fonts.googleapis.com/css2?family=Amiri&family=Inter:wght@400;500;600;700;800&family=Lexend:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- QR Code Generator & Scanner Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+
     <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        :root {
+            --primary-font: 'Plus Jakarta Sans', sans-serif;
+        }
+        body { font-family: var(--primary-font); }
         .arabic { font-family: 'Amiri', serif; font-size: 1.35rem; }
     </style>
+
+    <!-- SCRIPT PRE-RENDER DINI: MENCEGAH GLITCH FONT SEBELUM HALAMAN DIGAMBAR -->
+    <script>
+        (function applyCachedFontEarly() {
+            try {
+                const cachedConfig = localStorage.getItem("headerConfig_cache");
+                if (cachedConfig) {
+                    const data = JSON.parse(cachedConfig);
+                    if (data.themeFont) {
+                        document.documentElement.style.setProperty('--primary-font', `'${data.themeFont}', sans-serif`);
+                    }
+                }
+            } catch (e) { console.log(e); }
+        })();
+    </script>
 </head>
-<body class="bg-[#FFF5F5] text-gray-700 min-h-screen">
+<body id="appBody" class="bg-rose-50/40 text-gray-700 min-h-screen transition-colors duration-300">
 
     <!-- NAVBAR TOP -->
-    <nav class="bg-white border-b border-pink-100 shadow-xs px-4 py-3 sticky top-0 z-40">
+    <nav id="appNavbar" class="bg-white border-b border-rose-100 shadow-xs px-4 py-3 sticky top-0 z-40">
         <div class="max-w-5xl mx-auto flex justify-between items-center">
             <div class="flex items-center gap-2">
                 <span class="text-xl">✨</span>
-                <span class="font-bold text-gray-800 text-sm md:text-base">Pre-Test Tajwid</span>
+                <span id="navBarTitle" class="font-bold text-gray-800 text-sm md:text-base">Daarunnisaa</span>
             </div>
             <div id="navRight">
-                <!-- Tombol login dinamis -->
-                <button onclick="toggleLoginModal(true)" id="btnLoginView" class="bg-pink-100 hover:bg-pink-200 text-pink-700 text-xs font-semibold px-4 py-2 rounded-xl transition-all cursor-pointer">
-                    🔑 Masuk Ustadzah
+                <button onclick="toggleLoginModal(true)" id="btnLoginView" class="theme-btn-sec bg-rose-100 hover:bg-rose-200 text-rose-700 text-xs font-semibold px-4 py-2 rounded-xl transition-all cursor-pointer">
+                    Login
                 </button>
             </div>
         </div>
     </nav>
 
+    <!-- SCRIPT TIKET CACHE INSTAN NAVBAR & TOMBOL LOGIN (0ms) -->
+    <script>
+        (function restoreNavbarCache() {
+            try {
+                const cached = localStorage.getItem("headerConfig_cache");
+                if (cached) {
+                    const data = JSON.parse(cached);
+                    if (data.navTitle && document.getElementById("navBarTitle")) {
+                        document.getElementById("navBarTitle").innerText = data.navTitle;
+                    }
+                    if (data.btnLoginText && document.getElementById("btnLoginView")) {
+                        document.getElementById("btnLoginView").innerText = data.btnLoginText;
+                    }
+                }
+            } catch(e) {}
+        })();
+    </script>
+
     <!-- CONTAINER HALAMAN MAHASISWI (KUIS) -->
     <div id="studentView" class="block">
-        <!-- Header Cantik -->
-        <header class="bg-white border-b border-pink-100 shadow-xs relative overflow-hidden">
-            <div class="absolute -top-10 -right-10 w-40 h-40 bg-pink-100 rounded-full opacity-50 blur-xl"></div>
+        <header id="appHeader" class="bg-white border-b border-rose-100 shadow-xs relative overflow-hidden">
+            <div class="absolute -top-10 -right-10 w-40 h-40 bg-rose-100 rounded-full opacity-50 blur-xl"></div>
             <div class="absolute -bottom-10 -left-10 w-32 h-32 bg-amber-100 rounded-full opacity-40 blur-lg"></div>
             
             <div class="max-w-3xl mx-auto px-4 py-8 text-center relative z-10">
-                <span class="text-xs font-bold text-pink-500 uppercase tracking-widest bg-pink-50 px-3 py-1 rounded-full">Evaluasi Mahasiswi ✨</span>
-                <h1 class="text-2xl md:text-3xl font-bold text-gray-850 mt-3 tracking-wide">Pre-Test Tajwid</h1>
-                <p class="text-xs md:text-sm text-pink-600/80 italic mt-2 font-medium">
+                <span id="headerSubtitleDisplay" class="text-xs font-bold text-rose-500 uppercase tracking-widest bg-rose-50 px-3 py-1 rounded-full">EVALUASI TAJWID METODE ASY-SYAFI'I ✨</span>
+                <h1 id="displayMainTitle" class="text-2xl md:text-3xl font-bold text-gray-850 mt-3 tracking-wide">Lembar Soal Digital</h1>
+                <p id="displaySheetTitle" class="text-xs font-semibold text-gray-500 mt-1 uppercase tracking-wider hidden"></p>
+                <p id="headerQuoteDisplay" class="text-xs md:text-sm text-rose-600/80 italic mt-2 font-medium">
                     "Bersungguh-sungguhlah pada hal yang bermanfaat bagimu dan mintalah pertolongan Allah" (Al-Hadits)
                 </p>
             </div>
         </header>
 
-        <!-- KONTEN UTAMA: FORM MAHASISWI -->
+        <!-- SCRIPT TIKET CACHE INSTAN HEADER (0ms) -->
+        <script>
+            (function restoreHeaderCache() {
+                try {
+                    const cached = localStorage.getItem("headerConfig_cache");
+                    if (cached) {
+                        const data = JSON.parse(cached);
+                        if (data.headerSubtitle) document.getElementById("headerSubtitleDisplay").innerText = data.headerSubtitle;
+                        if (data.mainTitle) document.getElementById("displayMainTitle").innerText = data.mainTitle;
+                        if (data.headerQuote) document.getElementById("headerQuoteDisplay").innerText = data.headerQuote;
+                    }
+                } catch(e) {}
+            })();
+        </script>
+
         <main class="max-w-3xl mx-auto px-4 py-8">
             <form id="quizForm" class="space-y-6">
-                
-                <!-- Identitas Peserta -->
-                <div class="bg-white p-6 rounded-2xl shadow-xs border border-pink-100/60 space-y-4">
-                    <h3 class="text-sm font-bold text-gray-800 uppercase tracking-wider border-b border-pink-50 pb-2">Informasi Mahasiswi</h3>
+                <!-- AKSES TOKEN & INFORMASI MAHASISWI -->
+                <div id="panelStudentInfo" class="theme-panel bg-white p-6 rounded-2xl shadow-xs border border-rose-100/60 space-y-4">
+                    <h3 id="lblExamPageTitle" class="text-sm font-bold text-gray-800 uppercase tracking-wider border-b border-rose-50 pb-2">LAMAN UJIAN</h3>
+                    
                     <div>
-                        <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Nama Lengkap & NIM</label>
-                        <input type="text" id="studentName" required placeholder="Masukkan nama dan nomor induk mahasiswi..." class="w-full px-4 py-2.5 border border-pink-200/60 rounded-xl text-sm focus:outline-none focus:border-pink-400 focus:ring-2 focus:ring-pink-100 transition-all bg-pink-50/10">
+                        <label class="block text-xs font-semibold text-rose-600 uppercase mb-1">SCAN QR CODE / MASUKKAN KODE TOKEN SOAL</label>
+                        <div class="flex gap-2">
+                            <input type="text" id="inputTopicToken" placeholder="KETIK KODE TOKEN UJIAN..." class="w-full px-4 py-2.5 border border-rose-200 rounded-xl text-xs sm:text-sm uppercase font-mono font-bold text-rose-600 bg-rose-50/10 focus:outline-none focus:border-rose-400">
+                            <button type="button" onclick="openQrScannerModal()" class="theme-btn-sec bg-rose-100 hover:bg-rose-200 text-rose-700 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5">
+                                📷 Scan QR
+                            </button>
+                            <button type="button" id="btnOpenQuiz" onclick="window.verifyAndLoadQuiz()" class="theme-btn-pri bg-rose-500 hover:bg-rose-600 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap">
+                                Buka Soal
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="studentIdentityPanel" class="hidden transition-all duration-300 bg-rose-50/30 p-4 rounded-xl border border-rose-100 space-y-2">
+                        <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Identitas Mahasiswi: Nama Lengkap & NIM</label>
+                        <input type="text" id="studentName" required placeholder="Masukkan nama dan nomor induk mahasiswi..." oninput="saveStudentDraftAnswer()" class="w-full px-4 py-2.5 border border-rose-200 rounded-xl text-sm focus:outline-none focus:border-rose-400 focus:ring-2 focus:ring-rose-100 transition-all bg-white">
                     </div>
                 </div>
 
-                <!-- Bagian A: Pilihan Ganda -->
-                <div class="space-y-4">
-                    <h2 class="text-xs font-bold text-pink-600 uppercase tracking-widest pl-2">Bagian I: Pilihan Ganda (20 Soal)</h2>
-                    <div id="pgContainer" class="space-y-4"></div>
-                </div>
+                <!-- CONTAINER WADAH SOAL -->
+                <div id="studentQuestionsWrapper" class="hidden space-y-6">
+                    <div id="studentPgSection" class="space-y-4">
+                        <h2 class="text-xs font-bold text-rose-600 uppercase tracking-widest pl-2">Bagian I: Pilihan Ganda</h2>
+                        <div id="pgContainer" class="space-y-4"></div>
+                    </div>
 
-                <!-- Bagian B: Soal Esai -->
-                <div class="space-y-4">
-                    <h2 class="text-xs font-bold text-pink-600 uppercase tracking-widest pl-2 mt-8">Bagian II: Uraian / Esai (5 Soal)</h2>
-                    <div id="essayContainer" class="space-y-4"></div>
-                </div>
+                    <div id="studentEssaySection" class="space-y-4">
+                        <h2 class="text-xs font-bold text-rose-600 uppercase tracking-widest pl-2 mt-8">Bagian II: Uraian / Esai</h2>
+                        <div id="essayContainer" class="space-y-4"></div>
+                    </div>
 
-                <!-- Tombol Submit -->
-                <div class="pt-4 text-center">
-                    <button type="submit" id="btnSubmitQuiz" class="bg-gradient-to-r from-pink-400 to-rose-400 hover:from-pink-500 hover:to-rose-500 text-white font-semibold px-8 py-3.5 rounded-xl text-sm transition-all shadow-md transform hover:-translate-y-0.5 cursor-pointer">
-                        Kirim Jawaban Evaluasi 🌼
-                    </button>
+                    <div class="pt-4 text-center">
+                        <button type="submit" id="btnSubmitQuiz" class="theme-btn-pri bg-gradient-to-r from-rose-400 to-pink-500 hover:from-rose-500 hover:to-pink-600 text-white font-semibold px-8 py-3.5 rounded-xl text-sm transition-all shadow-md transform hover:-translate-y-0.5 cursor-pointer">
+                            Kirim Jawaban Evaluasi 🌼
+                        </button>
+                    </div>
                 </div>
             </form>
         </main>
     </div>
 
-    <!-- MODAL POPUP: SUKSES SUBMIT (MAHASISWI) -->
-    <div id="studentSuccessModal" class="fixed inset-0 bg-pink-900/30 backdrop-blur-xs flex items-center justify-center hidden z-50 px-4">
-        <div class="bg-white p-8 rounded-3xl max-w-md w-full text-center shadow-2xl border border-pink-100">
-            <span class="text-5xl">🎉</span>
-            <h3 class="text-xl font-bold text-gray-800 mt-4">Jawaban Berhasil Terkirim!</h3>
-            <p class="text-xs text-gray-500 mt-2">Terima kasih telah menyelesaikan evaluasi Tajwid. Jawaban Anda telah tersimpan secara online di database Ustadzah.</p>
-            
-            <div class="my-6 p-4 bg-pink-50/80 rounded-2xl border border-pink-100 text-left space-y-2">
-                <div class="flex justify-between items-center text-xs">
-                    <span class="text-gray-500">Nama / NIM:</span>
-                    <span id="modalStudentName" class="font-bold text-gray-800"></span>
+    <!-- MODAL EDIT TEMA SOAL -->
+    <div id="editTopicModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-xs flex items-center justify-center hidden z-50 px-4">
+        <div class="bg-white p-6 rounded-3xl max-w-sm w-full shadow-2xl border border-rose-100 space-y-4">
+            <div class="flex justify-between items-center border-b border-rose-100 pb-3">
+                <h3 class="text-sm font-bold text-gray-800 uppercase flex items-center gap-2">✏️ Edit Nama Tema Soal</h3>
+                <button onclick="closeEditTopicModal()" class="text-gray-400 hover:text-gray-600 font-bold cursor-pointer">✕</button>
+            </div>
+            <form id="editTopicForm" class="space-y-3">
+                <input type="hidden" id="editTopicId">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Nama Tema Soal</label>
+                    <input type="text" id="editTopicNameInput" required class="w-full px-3 py-2 border border-rose-200 rounded-xl text-xs font-bold bg-white focus:outline-none focus:border-rose-400">
                 </div>
-                <div class="flex justify-between items-center text-xs">
-                    <span class="text-gray-500">Waktu Pengerjaan:</span>
-                    <span id="modalStudentDuration" class="font-bold text-gray-800"></span>
+                <div class="flex gap-2 pt-1">
+                    <button type="submit" class="flex-1 theme-btn-pri bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold py-2.5 rounded-xl transition-all shadow-md cursor-pointer">
+                        Simpan
+                    </button>
+                    <button type="button" onclick="closeEditTopicModal()" class="px-4 bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs font-bold py-2.5 rounded-xl transition-all cursor-pointer">
+                        Batal
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL POPUP PRINT & CETAK SOAL -->
+    <div id="printModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-xs flex items-center justify-center hidden z-50 px-4">
+        <div class="bg-white p-6 rounded-3xl max-w-md w-full shadow-2xl border border-rose-100 space-y-4">
+            <div class="flex justify-between items-center border-b border-rose-100 pb-3">
+                <h3 class="text-sm font-bold text-gray-800 uppercase flex items-center gap-2">🖨️ Cetak & Export Soal</h3>
+                <button onclick="closePrintModal()" class="text-gray-400 hover:text-gray-600 font-bold cursor-pointer">✕</button>
+            </div>
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Pilih Tema Soal</label>
+                    <select id="printTopicSelect" class="w-full px-3 py-2 border border-rose-200 rounded-xl text-xs font-bold bg-rose-50/20">
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Pilih Format File Cetak</label>
+                    <select id="printFormatSelect" class="w-full px-3 py-2 border border-rose-200 rounded-xl text-xs font-bold bg-white">
+                        <option value="pdf">📄 Dokumen PDF (Print Ready / Download)</option>
+                        <option value="doc">📝 Microsoft Word (.doc)</option>
+                        <option value="json">📦 Format JSON (Backup Data)</option>
+                        <option value="txt">📑 Format Plain Text (.txt)</option>
+                    </select>
+                </div>
+                <button onclick="executePrint()" class="w-full theme-btn-pri bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold py-3 rounded-xl transition-all shadow-md mt-2 cursor-pointer">
+                    🚀 Cetak Sekarang
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL BACKUP & IMPORT SOAL -->
+    <div id="dataManageModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-xs flex items-center justify-center hidden z-50 px-4">
+        <div class="bg-white p-6 rounded-3xl max-w-lg w-full shadow-2xl border border-rose-100 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b border-rose-100 pb-3">
+                <h3 class="text-sm font-bold text-gray-800 uppercase flex items-center gap-2">📦 Backup, Import & Hapus Soal</h3>
+                <button onclick="closeDataManageModal()" class="text-gray-400 hover:text-gray-600 font-bold cursor-pointer">✕</button>
+            </div>
+            
+            <div class="space-y-4 text-xs">
+                <!-- EXPORT BACKUP -->
+                <div class="bg-rose-50/40 p-4 rounded-2xl border border-rose-100 space-y-2">
+                    <h4 class="font-bold text-rose-600 uppercase flex items-center gap-1.5">📥 1. Export / Backup Soal (JSON Format)</h4>
+                    <p class="text-gray-500">Unduh data soal terstruktur lengkap dengan kunci jawaban & bobot.</p>
+                    <div class="flex gap-2 pt-1">
+                        <select id="exportTopicSelect" class="flex-1 px-3 py-2 border border-rose-200 rounded-xl text-xs bg-white">
+                        </select>
+                        <button onclick="executeExportJson()" class="bg-rose-500 hover:bg-rose-600 text-white font-bold px-4 py-2 rounded-xl transition-all cursor-pointer">
+                            📥 Download Backup
+                        </button>
+                    </div>
+                </div>
+
+                <!-- IMPORT SOAL -->
+                <div class="bg-rose-50/40 p-4 rounded-2xl border border-rose-100 space-y-2">
+                    <h4 class="font-bold text-rose-600 uppercase flex items-center gap-1.5">📤 2. Import Data Soal Masal (.JSON)</h4>
+                    <p class="text-gray-500">Pilih file JSON hasil backup untuk mengupload bank soal secara otomatis.</p>
+                    <input type="file" id="importJsonFile" accept=".json" class="w-full text-xs text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-rose-100 file:text-rose-700">
+                    <button onclick="executeImportJson()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl transition-all shadow-xs mt-2 cursor-pointer">
+                        📤 Upload & Import Soal
+                    </button>
+                </div>
+
+                <!-- HAPUS SOAL FIREBASE -->
+                <div class="bg-red-50/60 p-4 rounded-2xl border border-red-200 space-y-3">
+                    <h4 class="font-bold text-red-600 uppercase flex items-center gap-1.5">🗑️ 3. Pembersihan Bank Soal (Firebase)</h4>
+                    <p class="text-gray-500">Hapus soal secara masal dari database Firebase. Harap berhati-hati karena data tidak dapat dikembalikan setelah dihapus.</p>
+                    
+                    <div class="space-y-2 pt-1">
+                        <!-- HAPUS BERDASARKAN TEMA -->
+                        <div class="flex gap-2">
+                            <select id="deleteTopicSelect" class="flex-1 px-3 py-2 border border-red-200 rounded-xl text-xs bg-white font-medium text-gray-700">
+                            </select>
+                            <button onclick="executeDeleteQuestionsByTopic()" class="bg-amber-600 hover:bg-amber-700 text-white font-bold px-4 py-2 rounded-xl transition-all cursor-pointer whitespace-nowrap">
+                                🗑️ Hapus Per Tema
+                            </button>
+                        </div>
+
+                        <!-- HAPUS SEMUA SOAL -->
+                        <button onclick="executeDeleteAllQuestions()" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 rounded-xl transition-all shadow-xs cursor-pointer flex items-center justify-center gap-1.5">
+                            🔥 Hapus SEMUA Soal di Firebase
+                        </button>
+                    </div>
                 </div>
             </div>
+        </div>
+    </div>
 
-            <button onclick="closeStudentModal()" class="w-full bg-pink-500 hover:bg-pink-600 text-white text-xs font-semibold py-3 rounded-xl transition-all shadow-md cursor-pointer">
-                Selesai & Selesaikan Sesi
+    <!-- MODAL SEARCH TEMA SOAL -->
+    <div id="topicSearchModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-xs flex items-center justify-center hidden z-50 px-4">
+        <div class="bg-white p-6 rounded-3xl max-w-md w-full shadow-2xl border border-rose-100 space-y-4">
+            <div class="flex justify-between items-center border-b border-rose-100 pb-3">
+                <h3 class="text-sm font-bold text-gray-800 uppercase">Cari & Pilih Tema Soal</h3>
+                <button onclick="closeTopicSearchModal()" class="text-gray-400 hover:text-gray-600 font-bold cursor-pointer">✕</button>
+            </div>
+            <input type="text" id="topicSearchInput" oninput="renderFilteredTopicsInModal()" placeholder="🔍 Ketik nama tema soal..." class="w-full px-4 py-2 border border-rose-200 rounded-xl text-xs bg-rose-50/10 focus:outline-none focus:border-rose-400">
+            <div id="modalTopicList" class="max-h-60 overflow-y-auto space-y-2 pr-1"></div>
+        </div>
+    </div>
+
+    <!-- MODAL SCANNER QR CODE -->
+    <div id="qrScannerModal" class="fixed inset-0 bg-gray-900/50 backdrop-blur-xs flex items-center justify-center hidden z-50 px-4">
+        <div class="bg-white p-6 rounded-3xl max-w-sm w-full shadow-2xl border border-rose-100 space-y-4 text-center">
+            <h3 class="text-sm font-bold text-gray-800">Scan QR Code Token Ujian</h3>
+            <div id="qrReader" class="w-full overflow-hidden rounded-2xl border border-rose-200"></div>
+            <button onclick="closeQrScannerModal()" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs font-semibold py-2 rounded-xl transition-all cursor-pointer">
+                Tutup Kamera
             </button>
         </div>
     </div>
 
-    <!-- MODAL POPUP: LOGIN PEMERIKSA (USTADZAH) -->
-    <div id="loginModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-xs flex items-center justify-center hidden z-50 px-4">
-        <div class="bg-white p-8 rounded-3xl max-w-sm w-full shadow-2xl border border-pink-100">
-            <div class="text-center mb-6">
-                <div class="w-12 h-12 bg-pink-100 text-pink-600 rounded-full flex items-center justify-center mx-auto mb-3 text-xl font-bold">🔐</div>
-                <h3 class="text-lg font-bold text-gray-850">Login Pemeriksa</h3>
-                <p class="text-xs text-gray-400 mt-1">Masukkan akun untuk menilai jawaban mahasiswi</p>
-            </div>
-
-            <form id="loginForm" class="space-y-4">
-                <div>
-                    <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Username</label>
-                    <input type="text" id="loginUsername" required class="w-full px-4 py-2.5 border border-pink-200 rounded-xl text-sm focus:outline-none focus:border-pink-400 bg-pink-50/10" placeholder="ustadzah">
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Password</label>
-                    <input type="password" id="loginPassword" required class="w-full px-4 py-2.5 border border-pink-200 rounded-xl text-sm focus:outline-none focus:border-pink-400 bg-pink-50/10" placeholder="••••••••">
-                </div>
-                <div id="loginError" class="text-xs text-red-500 font-medium hidden text-center">
-                    Username atau password salah!
-                </div>
-                <button type="submit" class="w-full bg-pink-500 hover:bg-pink-600 text-white font-semibold py-2.5 rounded-xl text-sm transition-all shadow-md cursor-pointer">
-                    Masuk Mode Pemeriksa
-                </button>
-                <button type="button" onclick="toggleLoginModal(false)" class="w-full text-xs text-gray-400 hover:text-gray-600 pt-2 cursor-pointer">
-                    Batal
-                </button>
-            </form>
+    <!-- MODAL QR CODE TOKEN -->
+    <div id="qrDisplayModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-xs flex items-center justify-center hidden z-50 px-4">
+        <div class="bg-white p-6 rounded-3xl max-w-xs w-full text-center shadow-2xl border border-rose-100 space-y-4">
+            <h3 id="qrModalTopicTitle" class="text-sm font-bold text-gray-800">QR Code Token</h3>
+            <div id="qrcodeCanvas" class="flex justify-center p-3 bg-rose-50/50 rounded-2xl border border-rose-100"></div>
+            <p id="qrModalTokenDisplay" class="text-xs font-mono font-bold text-rose-600 uppercase tracking-widest"></p>
+            <button onclick="closeQrDisplayModal()" class="theme-btn-pri w-full bg-rose-500 hover:bg-rose-600 text-white text-xs font-semibold py-2 rounded-xl transition-all cursor-pointer">
+                Tutup
+            </button>
         </div>
     </div>
 
-    <!-- CONTAINER HALAMAN PEMERIKSA (TEACHER DASHBOARD) -->
-    <div id="teacherView" class="hidden">
-        <header class="bg-white border-b border-pink-100 shadow-xs py-6 px-4">
-            <div class="max-w-5xl mx-auto flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <div>
-                    <span class="text-xs font-bold text-emerald-600 uppercase tracking-widest bg-emerald-50 px-3 py-1 rounded-full">Mode Pemeriksa Realtime 🔥</span>
-                    <h1 class="text-2xl font-bold text-gray-800 mt-2">Laman Penilaian Pre-Test Tajwid</h1>
-                    <p class="text-xs text-gray-500 mt-0.5">Jawaban dari mahasiswi akan masuk secara terhubung via Firebase Firestore.</p>
-                </div>
-                <button onclick="handleLogout()" class="bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs font-semibold px-4 py-2 rounded-xl transition-all cursor-pointer flex items-center gap-2">
-                    🚪 Logout Pemeriksa
-                </button>
-            </div>
-        </header>
-
-        <main class="max-w-5xl mx-auto px-4 py-8 space-y-8">
+    <!-- MODAL SUKSES SUBMIT -->
+    <div id="studentSuccessModal" class="fixed inset-0 bg-rose-900/30 backdrop-blur-xs flex items-center justify-center hidden z-50 px-4">
+        <div class="bg-white p-8 rounded-3xl max-w-md w-full text-center shadow-2xl border border-rose-100">
+            <span class="text-5xl">🎉</span>
+            <h3 class="text-xl font-bold text-gray-800 mt-4">Jawaban Berhasil Terkirim!</h3>
+            <p class="text-xs text-gray-500 mt-2">Terima kasih telah menyelesaikan evaluasi Tajwid. Jawaban Anda telah tersimpan secara online di Firebase.</p>
             
-            <!-- PANEL PERINGKAT (LEADERBOARD) -->
-            <div class="bg-white p-6 rounded-2xl shadow-xs border border-pink-100/60 space-y-4">
-                <div class="flex justify-between items-center pb-2 border-b border-gray-100">
-                    <div>
-                        <h3 class="text-sm font-bold text-gray-800 uppercase tracking-wider flex items-center gap-2">
-                            <span>🏆</span> Panel Peringkat Mahasiswi
-                        </h3>
-                        <p class="text-[11px] text-gray-400 mt-0.5">Diurutkan berdasarkan Skor Akhir Tertinggi & Waktu Pengerjaan Tercepat.</p>
-                    </div>
-                </div>
-
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
-                        <thead>
-                            <tr class="bg-pink-50/50 text-[11px] uppercase tracking-wider text-gray-500 border-b border-pink-100">
-                                <th class="py-3 px-4 font-bold text-center w-16">Rank</th>
-                                <th class="py-3 px-4 font-bold">Mahasiswi</th>
-                                <th class="py-3 px-4 font-bold text-center">Durasi</th>
-                                <th class="py-3 px-4 font-bold text-center">Status Koreksi</th>
-                                <th class="py-3 px-4 font-bold text-center">Skor PG</th>
-                                <th class="py-3 px-4 font-bold text-center">Skor Uraian</th>
-                                <th class="py-3 px-4 font-bold text-right">Skor Total</th>
-                            </tr>
-                        </thead>
-                        <tbody id="leaderboardBody" class="divide-y divide-gray-100 text-xs text-gray-700">
-                            <!-- Injeksi Dinamis -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- DAFTAR JAWABAN MAHASISWI -->
-            <div class="bg-white p-6 rounded-2xl shadow-xs border border-pink-100/60 space-y-4">
-                <div class="flex justify-between items-center pb-2 border-b border-gray-100">
-                    <h3 class="text-sm font-bold text-gray-800 uppercase tracking-wider flex items-center gap-2">
-                        <span>📋</span> Daftar Jawaban Mahasiswi (<span id="submissionCount">0</span>)
-                    </h3>
-                </div>
-
-                <!-- SEARCHBOX MAHASISWI -->
-                <div class="relative">
-                    <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">🔍</div>
-                    <input type="text" id="searchStudentInput" placeholder="Cari berdasarkan nama atau NIM mahasiswi..." class="w-full pl-10 pr-4 py-2.5 border border-pink-200/80 rounded-xl text-xs sm:text-sm focus:outline-none focus:border-pink-400 bg-pink-50/10 placeholder-gray-400">
-                </div>
-
-                <div id="submissionList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-2"></div>
-            </div>
-
-            <!-- DETAIL AREA PEMERIKSAAN -->
-            <div id="gradingArea" class="hidden bg-white p-6 rounded-2xl border border-pink-200/80 shadow-sm space-y-6">
-                <!-- HEADER AREA PEMERIKSAAN DENGAN TOMBOL MINIMIZE -->
-                <div class="bg-gradient-to-r from-pink-500 to-rose-500 text-white p-6 rounded-2xl shadow-md flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative">
-                    <div>
-                        <span class="bg-white/20 text-white text-xs font-bold px-3 py-1 rounded-full">Sedang Diperiksa</span>
-                        <h2 id="gradingStudentName" class="text-xl font-bold mt-2">--</h2>
-                        <p id="gradingMeta" class="text-xs opacity-90 mt-1">--</p>
-                    </div>
-                    
-                    <div class="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end">
-                        <div class="bg-white text-gray-800 p-4 rounded-xl shadow-xs text-center min-w-[140px]">
-                            <span class="text-xs text-gray-400 font-semibold uppercase tracking-wider block">Total Skor Akhir</span>
-                            <span id="gradingTotalScore" class="text-3xl font-extrabold text-pink-600">0</span>
-                            <span class="text-xs text-gray-400 font-medium block mt-0.5">(PG: <span id="gradingPgScore">0</span> | Uraian: <span id="gradingEssayScore">0</span>)</span>
-                        </div>
-                        
-                        <!-- TOMBOL MINIMIZE / SEMBUNYIKAN LEMBAR KOREKSI -->
-                        <button onclick="toggleMinimizeGrading()" id="btnMinimizeGrading" title="Minimize / Lipat Lembar Koreksi" class="bg-white/20 hover:bg-white/30 text-white p-3 rounded-xl transition-all cursor-pointer flex items-center justify-center font-bold text-sm">
-                            <span id="minimizeIcon">➖</span>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- KONTEN LEMBAR KOREKSI (YANG BISA DILIPAT/MINIMIZE) -->
-                <div id="gradingBodyContent" class="space-y-6">
-                    <div class="flex border-b border-pink-200 gap-2">
-                        <button onclick="switchGradingTab('pg')" id="tabPgBtn" class="px-5 py-3 font-semibold text-sm border-b-2 border-pink-500 text-pink-600 cursor-pointer flex items-center gap-2">
-                            <span>✅</span> Pemeriksaan Pilihan Ganda
-                        </button>
-                        <button onclick="switchGradingTab('essay')" id="tabEssayBtn" class="px-5 py-3 font-semibold text-sm border-b-2 border-transparent text-gray-500 hover:text-gray-700 cursor-pointer flex items-center gap-2">
-                            <span>📝</span> Penilaian Uraian / Esai
-                        </button>
-                    </div>
-
-                    <!-- TAB 1: PG -->
-                    <div id="tabPgContent" class="space-y-4">
-                        <div class="bg-pink-50/60 border border-pink-100 p-4 rounded-xl text-xs text-gray-600 flex justify-between items-center">
-                            <p>💡 <strong>Info Koreksi PG:</strong> Terkoreksi otomatis dari sistem. Tiap nomor bernilai <strong>2.5 poin</strong>.</p>
-                            <span class="font-bold text-pink-600 text-sm">Status PG: <span id="pgCorrectCount">0</span>/20 Benar</span>
-                        </div>
-                        <div id="pgGradingContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
-                    </div>
-
-                    <!-- TAB 2: ESAI -->
-                    <div id="tabEssayContent" class="hidden space-y-4">
-                        <div class="bg-amber-50/60 border border-amber-100 p-4 rounded-xl text-xs text-amber-800 flex justify-between items-center">
-                            <p>💡 <strong>Info Koreksi Uraian:</strong> Input skor per soal (0-10). Hasil akan tersimpan di Firebase cloud.</p>
-                            <span class="font-bold text-amber-700 text-sm">Total Nilai Esai: <span id="essayCurrentScoreDisplay">0</span> / 50</span>
-                        </div>
-                        <div id="essayGradingContainer" class="space-y-4"></div>
-                        <div class="bg-white p-6 rounded-2xl shadow-xs border border-pink-100 text-right">
-                            <button id="btnSaveGrading" class="bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-bold px-8 py-3 rounded-xl text-sm hover:shadow-lg transition-all cursor-pointer">
-                                💾 Simpan Hasil Penilaian ke Firebase
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </main>
-    </div>
-
-    <!-- FIREBASE SDK V10 (MODULE) -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
-        // =============================================================
-        // CONFIG FIREBASE PROYEK PRETEST-TAJWID ANDA
-        // =============================================================
-        const firebaseConfig = {
-            apiKey: "SILAKAN_TEMPEL_API_KEY_ANDA_DI_SINI", // Dapatkan dari Pengaturan Proyek di Firebase Console
-            authDomain: "pretest-tajwid.firebaseapp.com",
-            projectId: "pretest-tajwid",
-            storageBucket: "pretest-tajwid.appspot.com",
-            messagingSenderId: "986444579022",
-            appId: "SILAKAN_TEMPEL_APP_ID_ANDA_DI_SINI" // Dapatkan dari Pengaturan Proyek di Firebase Console
-        };
-
-        // Inisialisasi Firebase
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-
-        // DATA SOAL PILIHAN GANDA (20 Soal Lengkap)
-        const QUESTIONS_PG = [
-            { id: 1, text: "Bacaan Al-Qamariyyah terdapat pada kata ....", options: [{ k: "A", t: "الشمس" }, { k: "B", t: "الفيل" }, { k: "C", t: "الذين" }], key: "B" },
-            { id: 2, text: "Huruf yang memiliki sifat hams dan syiddah", options: [{ k: "A", t: "د ت", arabic: true }, { k: "B", t: "ق ك", arabic: true }, { k: "C", t: "ك ت", arabic: true }], key: "C" },
-            { id: 3, text: 'Kata <span class="arabic">بُنْيَانٌ</span> dibaca dengan izhar bukan idgham, karena <span class="arabic">نْ</span> dengan <span class="arabic">ي</span> terdapat dalam satu kata yang artinya ....', options: [{ k: "A", t: "Bangunan" }, { k: "B", t: "Tangkai" }, { k: "C", t: "Bercabang" }], key: "A" },
-            { id: 4, text: "Hukum mempelajari ilmu tajwid", options: [{ k: "A", t: "Fardhu 'ain" }, { k: "B", t: "Fardhu Kifayah" }, { k: "C", t: "Sunnah" }], key: "B" },
-            { id: 5, text: "Huruf yang memiliki 7 shifat yaitu ....", options: [{ k: "A", t: "ص", arabic: true }, { k: "B", t: "ز", arabic: true }, { k: "C", t: "ر", arabic: true }], key: "C" },
-            { id: 6, text: "Yang termasuk makhraj muhaqqaq", options: [{ k: "A", t: "Al-Jauf" }, { k: "B", t: "Al-Khaisyum" }, { k: "C", t: "Al-Lisan" }], key: "C" },
-            { id: 7, text: "Huruf-huruf muqaththa'ah", options: [{ k: "A", t: "سنقص لكم", arabic: true }, { k: "B", t: "نص حكim قطعا له سر", arabic: true }, { k: "C", t: "أجد قط bkt", arabic: true }], key: "B" },
-            { id: 8, text: "Menyimpangnya suara karena terhalang oleh lidah, terjadi pada huruf ....", options: [{ k: "A", t: "ث ذ", arabic: true }, { k: "B", t: "ل ر", arabic: true }, { k: "C", t: "ت ط", arabic: true }], key: "B" },
-            { id: 9, text: '<span class="arabic flex justify-end mb-2">فَإِذَا قَرَأْتَ الْقُرْآنَ فَاسْتَعِذْ بِاللَّهِ مِنَ الشَّيْطَانِ الرَّجِيْمِ ...</span> Ayat tersebut merupakan perintah untuk meminta perlindungan kepada Allah dari godaan syaithan yang terkutuk, terdapat dalam surah ....', options: [{ k: "A", t: "An-Naml : 89" }, { k: "B", t: "An-Nahl : 98" }, { k: "C", t: "An-Nahl : 89" }], key: "B" },
-            { id: 10, text: "Huruf yang dilafalkan dari ujung dua gigi seri atas, <strong>kecuali</strong> ....", options: [{ k: "A", t: "ل", arabic: true }, { k: "B", t: "ف", arabic: true }, { k: "C", t: "ث", arabic: true }], key: "A" },
-            { id: 11, text: 'Surah Al-Qalam ayat pertama apabila diwashalkan dibaca dengan <span class="arabic">نٓ وَالْقَلَمِ وَمَايَسْطُرُوْن</span>', options: [{ k: "A", t: "Izhar" }, { k: "B", t: "Idgham" }, { k: "C", t: "Ikhfa'" }], key: "A" },
-            { id: 12, text: "Penambahan huruf dan tidak diucapkan, baik ketika waqaf maupun washal", options: [{ k: "A", t: "Shifr mustathil" }, { k: "B", t: "Shifr mustadir" }, { k: "C", t: "Hamzah washal" }], key: "B" },
-            { id: 13, text: 'Hukum pada kata <span class="arabic">الَّذِي يُوَسْوِسُ</span>', options: [{ k: "A", t: "Idgham mutamatsilain" }, { k: "B", t: "Idgham mutajanisain" }, { k: "C", t: "Tidak ada jawaban benar" }], key: "C" },
-            { id: 14, text: "Contoh idgham naqish", options: [{ k: "A", t: "مِنْ وَاحِدٍ", arabic: true }, { k: "B", t: "أَلَمْ نَخْلُقْكُمْ", arabic: true }, { k: "C", t: "غَفُوْرٌ رَحِيْمٌ", arabic: true }], key: "A" },
-            { id: 15, text: 'Hukum pada kata <span class="arabic">ءَآلئٰنَ</span>', options: [{ k: "A", t: "Mad lazim kalimi mukhaffaf" }, { k: "B", t: "Mad lazim kalimi mutsaqqal" }, { k: "C", t: "Mad lazim harfi mukhaffaf" }], key: "A" },
-            { id: 16, text: 'Kata <span class="arabic">لَا تَأْمَنَّا</span> dapat dibaca dengan dua cara, yaitu ....', options: [{ k: "A", t: "Isymam dan Naql" }, { k: "B", t: "Ikhtilas dan Raum" }, { k: "C", t: "Isymam dan Raum" }], key: "C" },
-            { id: 17, text: "Contoh kata yang dibaca dengan nabr", options: [{ k: "A", t: "َءَآلئٰن", arabic: true }, { k: "B", t: "حُيِّيْتُمْ", arabic: true }, { k: "C", t: "مِنَ الْحًقِّ (waqaf)", arabic: true }], key: "B" },
-            { id: 18, text: "Membaca hamzah antara hamzah dan alif, disebut ....", options: [{ k: "A", t: "Tashiil" }, { k: "B", t: "Naql" }, { k: "C", t: "Imalah" }], key: "A" },
-            { id: 19, text: '<span class="arabic flex justify-end mb-2">وَقَالُوا اتَّخَذَ اللّهُ وَلَدًا (البقرة : ١١٦)</span> Berhenti pada kata <span class="arabic">وَقَالُوا</span> termasuk waqaf ....', options: [{ k: "A", t: "Qabih" }, { k: "B", t: "Hasan" }, { k: "C", t: "Tam" }], key: "A" },
-            { id: 20, text: 'Pada kata <span class="arabic">فِيْهِ هُدًى</span> terdapat hukum ....', options: [{ k: "A", t: "Mad shilah sughro" }, { k: "B", t: "Mad thobi'i" }, { k: "C", t: "Tidak ada mad (ashli)" }], key: "C" }
-        ];
-
-        // DATA SOAL ESAI (5 Soal Lengkap)
-        const QUESTIONS_ESSAY = [
-            { id: 1, text: "Jelaskan definisi Tajwid secara bahasa dan istilah!" },
-            { id: 2, text: "Sebutkan huruf-huruf Idgham Bighunnah beserta cara membacanya!" },
-            { id: 3, text: "Apa perbedaan antara Qalqalah Sughra dan Qalqalah Kubra? Berikan contohnya!" },
-            { id: 4, text: "Jelaskan hukum bacaan Mad Wajib Muttasil beserta panjang harakatnya!" },
-            { id: 5, text: "Sebutkan makhraj umum (makharijul huruf) yang utama dalam ilmu tajwid!" }
-        ];
-
-        // RENDER SOAL KE DOM
-        function renderQuiz() {
-            // Render PG
-            const pgContainer = document.getElementById("pgContainer");
-            pgContainer.innerHTML = QUESTIONS_PG.map((q, idx) => `
-                <div class="bg-white p-5 rounded-2xl shadow-xs border border-pink-100/60 space-y-3">
-                    <p class="text-xs font-semibold text-gray-400">Soal ${idx + 1} dari 20</p>
-                    <p class="text-sm font-semibold text-gray-800">${q.text}</p>
-                    <div class="space-y-2 pt-1">
-                        ${q.options.map(opt => `
-                            <label class="flex items-center gap-3 p-3 rounded-xl border border-gray-100 hover:bg-pink-50/30 cursor-pointer transition-all">
-                                <input type="radio" name="pg-${q.id}" value="${opt.k}" required class="accent-pink-500">
-                                <span class="text-xs font-bold text-gray-400 bg-gray-50 px-2 py-0.5 rounded-md">${opt.k}</span>
-                                <span class="text-xs font-medium text-gray-700 ${opt.arabic ? 'arabic ml-auto' : ''}">${opt.t}</span>
-                            </label>
-                        `).join('')}
-                    </div>
-                </div>
-            `).join('');
-
-            // Render Essay
-            const essayContainer = document.getElementById("essayContainer");
-            essayContainer.innerHTML = QUESTIONS_ESSAY.map((q, idx) => `
-                <div class="bg-white p-5 rounded-2xl shadow-xs border border-pink-100/60 space-y-3">
-                    <p class="text-xs font-semibold text-gray-400">Uraian Soal ${idx + 1} dari 5</p>
-                    <p class="text-sm font-semibold text-gray-800">${q.text}</p>
-                    <textarea id="essay-${q.id}" required rows="4" placeholder="Ketikkan jawaban Anda secara rinci di sini..." class="w-full px-4 py-3 border border-pink-200/60 rounded-xl text-xs sm:text-sm focus:outline-none focus:border-pink-400 focus:ring-2 focus:ring-pink-100 transition-all bg-pink-50/10 placeholder-gray-400"></textarea>
-                </div>
-            `).join('');
-        }
-
-        // Jalankan render setelah DOM siap
-        renderQuiz();
-
-        // SIMPAN JAWABAN KE FIRESTORE (KUIS MAHASISWI)
-        let startTime = Date.now();
-
-        document.getElementById("quizForm").addEventListener("submit", async (e) => {
-            e.preventDefault();
-            const studentName = document.getElementById("studentName").value.trim();
-            const btnSubmit = document.getElementById("btnSubmitQuiz");
-
-            btnSubmit.disabled = true;
-            btnSubmit.innerHTML = "Sedang mengirim jawaban... ⏳";
-
-            // Evaluasi jawaban PG otomatis
-            let correctCount = 0;
-            const answersPg = {};
-            QUESTIONS_PG.forEach(q => {
-                const selected = document.querySelector(`input[name="pg-${q.id}"]:checked`);
-                const ansVal = selected ? selected.value : "";
-                answersPg[q.id] = ansVal;
-                if (ansVal === q.key) correctCount++;
-            });
-
-            // Ambil jawaban Esai
-            const answersEssay = {};
-            QUESTIONS_ESSAY.forEach(q => {
-                const textVal = document.getElementById(`essay-${q.id}`).value.trim();
-                answersEssay[q.id] = textVal;
-            });
-
-            const durationSec = Math.floor((Date.now() - startTime) / 1000);
-            const durationMin = Math.floor(durationSec / 60);
-            const durationText = durationMin > 0 ? `${durationMin} menit ${durationSec % 60} detik` : `${durationSec} detik`;
-
-            const pgScoreCalculated = correctCount * 2.5; // Maks 50 Poin
-
-            // Susun dokumen pengiriman
-            const submissionData = {
-                studentName,
-                answersPg,
-                answersEssay,
-                pgCorrectCount: correctCount,
-                pgScore: pgScoreCalculated,
-                essayScore: 0, // diisi nanti oleh Ustadzah
-                totalScore: pgScoreCalculated, // awalnya sama dengan PG
-                durationText,
-                durationSeconds: durationSec, // Simpan durasi presisi untuk sorting leaderboard
-                submittedAt: new Date(),
-                status: "Belum Diperiksa",
-                essayGrades: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
-            };
-
-            try {
-                // Tulis langsung ke subkoleksi 'submissions' di Firestore
-                await addDoc(collection(db, "submissions"), submissionData);
-
-                // Tampilkan sukses modal
-                document.getElementById("modalStudentName").innerText = studentName;
-                document.getElementById("modalStudentDuration").innerText = durationText;
-                document.getElementById("studentSuccessModal").classList.remove("hidden");
-                document.getElementById("quizForm").reset();
-            } catch (err) {
-                alert("Gagal mengirim jawaban. Mohon cek kembali koneksi internet dan Aturan Keamanan Firestore Anda. Detail error: " + err.message);
-                btnSubmit.disabled = false;
-                btnSubmit.innerHTML = "Kirim Jawaban Evaluasi 🌼";
-            }
-        });
-
-        // MANAGEMENT REALTIME PEMERIKSAAN (TEACHER VIEW)
-        let submissions = [];
-        let activeGradingId = null;
-
-        function loadSubmissions() {
-            const q = query(collection(db, "submissions"), orderBy("submittedAt", "desc"));
-            onSnapshot(q, (snapshot) => {
-                submissions = [];
-                snapshot.forEach(doc => {
-                    submissions.push({ id: doc.id, ...doc.data() });
-                });
-                renderSubmissionList();
-                renderLeaderboard();
-            });
-        }
-
-        // RENDER LEADERBOARD PERINGKAT
-        function renderLeaderboard() {
-            const leaderboardBody = document.getElementById("leaderboardBody");
-            
-            if (submissions.length === 0) {
-                leaderboardBody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-gray-400">Belum ada data pengerjaan mahasiswi.</td></tr>`;
-                return;
-            }
-
-            // Copy array dan sortir: 1. Total Score (Desc), 2. Duration Seconds (Asc)
-            const sorted = [...submissions].sort((a, b) => {
-                if (b.totalScore !== a.totalScore) {
-                    return b.totalScore - a.totalScore;
-                }
-                const timeA = a.durationSeconds || 999999;
-                const timeB = b.durationSeconds || 999999;
-                return timeA - timeB;
-            });
-
-            leaderboardBody.innerHTML = sorted.map((s, index) => {
-                let rankBadge = `<span class="font-bold text-gray-500">${index + 1}</span>`;
-                if (index === 0) rankBadge = `<span class="text-base">🥇</span>`;
-                else if (index === 1) rankBadge = `<span class="text-base">🥈</span>`;
-                else if (index === 2) rankBadge = `<span class="text-base">🥉</span>`;
-
-                const rowBg = index < 3 ? 'bg-amber-50/30 font-medium' : 'hover:bg-gray-50';
-
-                return `
-                    <tr class="${rowBg} transition-all">
-                        <td class="py-3 px-4 text-center">${rankBadge}</td>
-                        <td class="py-3 px-4 font-bold text-gray-800">${s.studentName}</td>
-                        <td class="py-3 px-4 text-center text-gray-500">${s.durationText || '-'}</td>
-                        <td class="py-3 px-4 text-center">
-                            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${s.status === 'Selesai' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}">
-                                ${s.status}
-                            </span>
-                        </td>
-                        <td class="py-3 px-4 text-center font-medium">${s.pgScore}</td>
-                        <td class="py-3 px-4 text-center font-medium">${s.essayScore}</td>
-                        <td class="py-3 px-4 text-right font-extrabold text-pink-600 text-sm">${s.totalScore} Poin</td>
-                    </tr>
-                `;
-            }).join('');
-        }
-
-        function renderSubmissionList() {
-            const listContainer = document.getElementById("submissionList");
-            const filterText = document.getElementById("searchStudentInput").value.toLowerCase();
-            
-            const filtered = submissions.filter(s => s.studentName.toLowerCase().includes(filterText));
-            document.getElementById("submissionCount").innerText = filtered.length;
-
-            if (filtered.length === 0) {
-                listContainer.innerHTML = `<p class="col-span-full text-center text-xs text-gray-400 py-6">Tidak ada jawaban mahasiswi yang ditemukan.</p>`;
-                return;
-            }
-
-            listContainer.innerHTML = filtered.map(s => `
-                <div onclick="selectSubmissionForGrading('${s.id}')" class="bg-white p-4 rounded-xl border ${activeGradingId === s.id ? 'border-pink-500 ring-2 ring-pink-100' : 'border-gray-100'} hover:border-pink-300 transition-all cursor-pointer relative">
-                    <span class="absolute top-3 right-3 text-[10px] font-bold px-2 py-0.5 rounded-full ${s.status === 'Selesai' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}">
-                        ${s.status}
-                    </span>
-                    <h4 class="text-xs sm:text-sm font-bold text-gray-800 pr-12 truncate">${s.studentName}</h4>
-                    <p class="text-[10px] text-gray-400 mt-1">Dikirim: ${s.submittedAt?.toDate ? s.submittedAt.toDate().toLocaleTimeString() : ''}</p>
-                    <div class="mt-3 flex justify-between items-center border-t border-gray-50 pt-2 text-[10px] font-semibold text-gray-500">
-                        <span>Skor PG: ${s.pgScore}</span>
-                        <span class="text-pink-600 font-bold">Total: ${s.totalScore} Poin</span>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        // Filter search input
-        document.getElementById("searchStudentInput").addEventListener("input", renderSubmissionList);
-
-        // Pilih item untuk dinilai
-        window.selectSubmissionForGrading = function(id) {
-            activeGradingId = id;
-            const sub = submissions.find(s => s.id === id);
-            if (!sub) return;
-
-            renderSubmissionList();
-
-            // Pastikan konten terbuka saat memilih mahasiswi baru
-            const content = document.getElementById("gradingBodyContent");
-            content.classList.remove("hidden");
-            document.getElementById("minimizeIcon").innerText = "➖";
-
-            document.getElementById("gradingArea").classList.remove("hidden");
-            document.getElementById("gradingStudentName").innerText = sub.studentName;
-            document.getElementById("gradingMeta").innerText = `Waktu pengerjaan: ${sub.durationText} | Status: ${sub.status}`;
-            document.getElementById("gradingTotalScore").innerText = sub.totalScore;
-            document.getElementById("gradingPgScore").innerText = sub.pgScore;
-            document.getElementById("gradingEssayScore").innerText = sub.essayScore;
-            document.getElementById("pgCorrectCount").innerText = sub.pgCorrectCount;
-
-            // Render PG detail untuk koreksi visual
-            const pgGradingContainer = document.getElementById("pgGradingContainer");
-            pgGradingContainer.innerHTML = QUESTIONS_PG.map(q => {
-                const userAns = sub.answersPg[q.id] || "Belum diisi";
-                const isCorrect = userAns === q.key;
-                return `
-                    <div class="bg-gray-50 p-4 rounded-xl border ${isCorrect ? 'border-emerald-100 bg-emerald-50/10' : 'border-rose-100 bg-rose-50/10'} text-xs">
-                        <div class="flex justify-between font-bold mb-1">
-                            <span>Soal No. ${q.id}</span>
-                            <span class="${isCorrect ? 'text-emerald-600' : 'text-rose-500'}">${isCorrect ? '✓ Benar' : '✗ Salah'}</span>
-                        </div>
-                        <p class="text-gray-700 font-medium">${q.text}</p>
-                        <p class="mt-2 text-gray-500">Jawaban mahasiswa: <strong class="text-gray-800">${userAns}</strong> (Kunci: ${q.key})</p>
-                    </div>
-                `;
-            }).join('');
-
-            // Render Esai detail untuk input nilai manual
-            const essayGradingContainer = document.getElementById("essayGradingContainer");
-            essayGradingContainer.innerHTML = QUESTIONS_ESSAY.map(q => {
-                const userAns = sub.answersEssay[q.id] || "(Kosong)";
-                const currentGrade = sub.essayGrades ? (sub.essayGrades[q.id] || 0) : 0;
-                return `
-                    <div class="bg-white p-5 rounded-2xl shadow-xs border border-pink-100/60 space-y-3 text-xs">
-                        <div class="flex justify-between items-center border-b border-gray-100 pb-2">
-                            <span class="font-bold text-gray-700">Soal No. ${q.id}</span>
-                            <div class="flex items-center gap-2">
-                                <span class="text-gray-400 font-medium">Beri Nilai (0-10):</span>
-                                <input type="number" id="grade-essay-${q.id}" value="${currentGrade}" min="0" max="10" oninput="calculateRealtimeEssayScore()" class="w-16 px-2.5 py-1.5 border border-pink-200 rounded-lg text-center font-bold text-pink-600 focus:outline-none focus:border-pink-500 bg-pink-50/10">
-                            </div>
-                        </div>
-                        <p class="font-semibold text-gray-800">${q.text}</p>
-                        <div class="p-4 bg-gray-50 rounded-xl text-gray-600 italic whitespace-pre-line border border-gray-100">
-                            ${userAns}
-                        </div>
-                    </div>
-                `;
-            }).join('');
-
-            calculateRealtimeEssayScore();
-            switchGradingTab('pg');
-            
-            // Gulir otomatis ke bagian grading area
-            document.getElementById("gradingArea").scrollIntoView({ behavior: 'smooth' });
-        };
-
-        // Hitung skor esai secara dinamis
-        window.calculateRealtimeEssayScore = function() {
-            let totalEssay = 0;
-            QUESTIONS_ESSAY.forEach(q => {
-                const input = document.getElementById(`grade-essay-${q.id}`);
-                if (input) {
-                    totalEssay += Math.min(10, Math.max(0, parseFloat(input.value) || 0));
-                }
-            });
-            document.getElementById("essayCurrentScoreDisplay").innerText = totalEssay;
-        };
-
-        // Simpan Penilaian Esai ke Firebase
-        document.getElementById("btnSaveGrading").addEventListener("click", async () => {
-            if (!activeGradingId) return;
-
-            const btn = document.getElementById("btnSaveGrading");
-            btn.disabled = true;
-            btn.innerText = "Menyimpan ke Cloud... ⏳";
-
-            const grades = {};
-            let totalEssay = 0;
-            QUESTIONS_ESSAY.forEach(q => {
-                const inputVal = parseFloat(document.getElementById(`grade-essay-${q.id}`).value) || 0;
-                grades[q.id] = inputVal;
-                totalEssay += inputVal;
-            });
-
-            const currentSub = submissions.find(s => s.id === activeGradingId);
-            const totalScoreFinal = (currentSub?.pgScore || 0) + totalEssay;
-
-            try {
-                const docRef = doc(db, "submissions", activeGradingId);
-                await updateDoc(docRef, {
-                    essayGrades: grades,
-                    essayScore: totalEssay,
-                    totalScore: totalScoreFinal,
-                    status: "Selesai"
-                });
-
-                // Perbarui visualisasi seketika
-                document.getElementById("gradingTotalScore").innerText = totalScoreFinal;
-                document.getElementById("gradingEssayScore").innerText = totalEssay;
-
-                alert("Penilaian berhasil disimpan!");
-            } catch (err) {
-                alert("Gagal menyimpan nilai. Detail error: " + err.message);
-            } finally {
-                btn.disabled = false;
-                btn.innerText = "💾 Simpan Penilaian";
-            }
-        });
-
-        // MODAL LOGIN HANDLER
-        window.handleLogin = function(e) {
-            e.preventDefault();
-            const user = document.getElementById("loginUsername").value.trim();
-            const pass = document.getElementById("loginPassword").value;
-
-            // Kredensial Ustadzah Sederhana
-            if (user === "ustadzah" && pass === "tajwidok") {
-                document.getElementById("loginModal").classList.add("hidden");
-                document.getElementById("studentView").classList.add("hidden");
-                document.getElementById("teacherView").classList.remove("hidden");
-                document.getElementById("navRight").innerHTML = `
-                    <span class="text-xs font-semibold text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-100">
-                        🟢 Sesi Ustadzah Aktif
-                    </span>
-                `;
-                loadSubmissions();
-            } else {
-                const errDiv = document.getElementById("loginError");
-                errDiv.classList.remove("hidden");
-                setTimeout(() => errDiv.classList.add("hidden"), 3000);
-            }
-        };
-
-        // Sambungkan form login ke fungsi handler
-        document.getElementById("loginForm").addEventListener("submit", handleLogin);
-    </script>
-
-    <!-- FUNGSI ANTARMUKA GLOBAL -->
-    <script>
-        function toggleLoginModal(show) {
-            const modal = document.getElementById("loginModal");
-            if (show) modal.classList.remove("hidden");
-            else modal.classList.add("hidden");
-        }
-
-        function closeStudentModal() {
-            document.getElementById("studentSuccessModal").classList.add("hidden");
-            window.location.reload(); // Segarkan halaman untuk peserta baru
-        }
-
-        function handleLogout() {
-            window.location.reload();
-        }
-
-        function switchGradingTab(tab) {
-            const tabPgBtn = document.getElementById("tabPgBtn");
-            const tabEssayBtn = document.getElementById("tabEssayBtn");
-            const tabPgContent = document.getElementById("tabPgContent");
-            const tabEssayContent = document.getElementById("tabEssayContent");
-
-            if (tab === 'pg') {
-                tabPgBtn.className = "px-5 py-3 font-semibold text-sm border-b-2 border-pink-500 text-pink-600 cursor-pointer flex items-center gap-2";
-                tabEssayBtn.className = "px-5 py-3 font-semibold text-sm border-b-2 border-transparent text-gray-500 hover:text-gray-700 cursor-pointer flex items-center gap-2";
-                tabPgContent.classList.remove("hidden");
-                tabEssayContent.classList.add("hidden");
-            } else {
-                tabEssayBtn.className = "px-5 py-3 font-semibold text-sm border-b-2 border-pink-500 text-pink-600 cursor-pointer flex items-center gap-2";
-                tabPgBtn.className = "px-5 py-3 font-semibold text-sm border-b-2 border-transparent text-gray-500 hover:text-gray-700 cursor-pointer flex items-center gap-2";
-                tabEssayContent.classList.remove("hidden");
-                tabPgContent.classList.add("hidden");
-            }
-        }
-
-        // FUNGSI MINIMIZE / LIPAT DETAIL LEMBAR PEMERIKSAAN
-        function toggleMinimizeGrading() {
-            const bodyContent = document.getElementById("gradingBodyContent");
-            const icon = document.getElementById("minimizeIcon");
-
-            if (bodyContent.classList.contains("hidden")) {
-                bodyContent.classList.remove("hidden");
-                icon.innerText = "➖";
-            } else {
-                bodyContent.classList.add("hidden");
-                icon.innerText = "➕";
-            }
-        }
-    </script>
-</body>
-</html>
+            <div class="my-6 p-4 bg-rose-50/80 rounded-2xl border border-rose-100 text-left space-y-2">
+                <div class="flex justify-between items-center text-xs">
+                    <span class="text-gray-500">Nama / NIM:</span>
+                    <span id="modalStudentName" class="font-bold textNo response
