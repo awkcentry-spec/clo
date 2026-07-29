@@ -141,7 +141,7 @@
                         <h2 class="font-bold text-lg text-stone-800">Dashboard Admin Pembelian (Procurement)</h2>
                         <p class="text-xs text-stone-500">Kelola Pengajuan PO, Verifikasi 6R, dan Serah Berkas ke Keuangan</p>
                     </div>
-                    <button onclick="openModalPO()" class="bg-amber-800 hover:bg-amber-900 text-white text-xs font-bold px-4 py-2.5 rounded-lg shadow transition">
+                    <button id="btnOpenModalPO" class="bg-amber-800 hover:bg-amber-900 text-white text-xs font-bold px-4 py-2.5 rounded-lg shadow transition">
                         <i class="fa-solid fa-plus mr-1.5"></i> Buat Pengajuan PO Baru
                     </button>
                 </div>
@@ -200,11 +200,11 @@
                             <span class="text-[10px] bg-green-100 text-green-800 px-2 py-0.5 rounded font-bold">Hari Ini</span>
                         </div>
                         <div class="grid grid-cols-2 gap-3 text-xs">
-                            <button onclick="alert('Fitur Rekonsiliasi POS Kasir disinkronkan!')" class="p-2.5 bg-stone-50 hover:bg-amber-50 border border-stone-200 rounded-lg text-left transition">
+                            <button id="btnRekonKasir" class="p-2.5 bg-stone-50 hover:bg-amber-50 border border-stone-200 rounded-lg text-left transition">
                                 <p class="font-semibold text-stone-700">1. Rekon Kasir (POS vs QRIS/Cash)</p>
                                 <p class="text-[10px] text-stone-500">Cek selisih tunai & EDC toko harian</p>
                             </button>
-                            <button onclick="alert('Pencatatan Fluktuasi HPP Mentega/Tepung diperbarui!')" class="p-2.5 bg-stone-50 hover:bg-amber-50 border border-stone-200 rounded-lg text-left transition">
+                            <button id="btnHppUpdate" class="p-2.5 bg-stone-50 hover:bg-amber-50 border border-stone-200 rounded-lg text-left transition">
                                 <p class="font-semibold text-stone-700">2. Fluktuasi HPP Bahan Baku</p>
                                 <p class="text-[10px] text-stone-500">Update harga telur, tepung, mentega</p>
                             </button>
@@ -245,7 +245,7 @@
         <div class="bg-white rounded-2xl shadow-2xl border border-stone-200 max-w-lg w-full p-6 space-y-4">
             <div class="flex justify-between items-center border-b border-stone-100 pb-3">
                 <h3 class="font-bold text-base text-amber-950"><i class="fa-solid fa-cart-plus text-amber-700 mr-2"></i> Buat Pengajuan Purchase Order (PO)</h3>
-                <button onclick="closeModalPO()" class="text-stone-400 hover:text-stone-600 text-lg"><i class="fa-solid fa-xmark"></i></button>
+                <button id="btnCloseModalPOX" class="text-stone-400 hover:text-stone-600 text-lg"><i class="fa-solid fa-xmark"></i></button>
             </div>
 
             <form id="formPO" class="space-y-3 text-xs">
@@ -283,7 +283,7 @@
                 </div>
 
                 <div class="pt-2 flex space-x-2">
-                    <button type="button" onclick="closeModalPO()" class="w-1/2 py-2 border rounded-lg text-stone-600 font-semibold hover:bg-stone-50">Batal</button>
+                    <button type="button" id="btnCancelModalPO" class="w-1/2 py-2 border rounded-lg text-stone-600 font-semibold hover:bg-stone-50">Batal</button>
                     <button type="submit" class="w-1/2 py-2 bg-amber-800 hover:bg-amber-900 text-white rounded-lg font-semibold shadow">Serahkan ke Keuangan</button>
                 </div>
             </form>
@@ -326,11 +326,65 @@
         const dashboardFinance = document.getElementById('dashboardFinance');
         const userRoleBadge = document.getElementById('userRoleBadge');
         const userEmailDisplay = document.getElementById('userEmailDisplay');
+        const modalPO = document.getElementById('modalPO');
 
-        // NOTIF TOGGLE
+        // EVENT LISTENERS & MODAL MANAGEMENT
         document.getElementById('notifBell').addEventListener('click', () => {
             document.getElementById('notifDropdown').classList.toggle('hidden');
         });
+
+        const openModalPO = () => modalPO.classList.remove('hidden');
+        const closeModalPO = () => modalPO.classList.add('hidden');
+
+        document.getElementById('btnOpenModalPO').addEventListener('click', openModalPO);
+        document.getElementById('btnCloseModalPOX').addEventListener('click', closeModalPO);
+        document.getElementById('btnCancelModalPO').addEventListener('click', closeModalPO);
+
+        document.getElementById('btnRekonKasir').addEventListener('click', () => alert('Fitur Rekonsiliasi POS Kasir disinkronkan!'));
+        document.getElementById('btnHppUpdate').addEventListener('click', () => alert('Pencatatan Fluktuasi HPP Mentega/Tepung diperbarui!'));
+
+        // EXPOSE ACTIONS TO GLOBAL WINDOW SCOPE (SAFE FOR EVENT DELEGATION / INLINE CALLS)
+        window.flagRedFlag = async (orderId) => {
+            const reason = prompt("Masukkan alasan Red Flag / Retur (Cth: Cokelat meleleh / Invoice tidak sesuai):");
+            if (!reason) return;
+
+            try {
+                await updateDoc(doc(db, "orders", orderId), {
+                    status: "RED_FLAG",
+                    redFlagReason: reason
+                });
+
+                await addDoc(collection(db, "notifications"), {
+                    title: "⚠️ Peringatan Red Flag Penagihan",
+                    message: `PO ditahan: ${reason}`,
+                    sender: auth.currentUser?.email || 'System',
+                    createdAt: serverTimestamp()
+                });
+            } catch (err) {
+                alert("Gagal memperbarui status: " + err.message);
+            }
+        };
+
+        window.approvePayment = async (orderId, poNum) => {
+            if (!confirm(`Konfirmasi pelunasan transfer untuk ${poNum}?`)) return;
+
+            try {
+                await updateDoc(doc(db, "orders", orderId), {
+                    status: "PAID",
+                    paidAt: serverTimestamp(),
+                    approvedBy: auth.currentUser?.email || 'Finance'
+                });
+
+                await addDoc(collection(db, "notifications"), {
+                    title: "Pembayaran Supplier Lunas",
+                    message: `${poNum} telah ditransfer oleh Keuangan sesuai TOP.`,
+                    sender: "Admin Keuangan",
+                    createdAt: serverTimestamp()
+                });
+            } catch (err) {
+                alert("Gagal memproses pembayaran: " + err.message);
+            }
+        };
 
         // 1. AUTHENTICATION & LOGIN
         loginForm.addEventListener('submit', async (e) => {
@@ -340,17 +394,16 @@
             const role = document.getElementById('loginRole').value;
 
             try {
-                // Try signin
                 await signInWithEmailAndPassword(auth, email, password);
                 localStorage.setItem('tbk_user_role', role);
             } catch (error) {
-                // Auto create demo user if not exists
+                // If account doesn't exist, try creating demo account
                 if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
                     try {
                         await createUserWithEmailAndPassword(auth, email, password);
                         localStorage.setItem('tbk_user_role', role);
                     } catch (err) {
-                        alert("Gagal Login/Registrasi Demo: " + err.message);
+                        alert("Gagal Login / Password Salah: " + err.message);
                     }
                 } else {
                     alert("Error Authentication: " + error.message);
@@ -427,8 +480,8 @@
 
                     notifList.innerHTML = notifs.map(n => `
                         <div class="p-3 hover:bg-stone-50 transition">
-                            <p class="font-bold text-stone-800">${n.title}</p>
-                            <p class="text-stone-600 mt-0.5">${n.message}</p>
+                            <p class="font-bold text-stone-800">${n.title || ''}</p>
+                            <p class="text-stone-600 mt-0.5">${n.message || ''}</p>
                             <span class="text-[9px] text-stone-400 mt-1 block">${n.sender || 'System'}</span>
                         </div>
                     `).join('');
@@ -458,11 +511,11 @@
             tbody.innerHTML = orders.map(o => `
                 <tr class="hover:bg-amber-50/50">
                     <td class="p-3">
-                        <span class="font-bold text-stone-800">${o.poNumber}</span>
-                        <p class="text-stone-500">${o.vendor}</p>
+                        <span class="font-bold text-stone-800">${o.poNumber || '-'}</span>
+                        <p class="text-stone-500">${o.vendor || '-'}</p>
                     </td>
-                    <td class="p-3 font-medium text-stone-700">${o.items}</td>
-                    <td class="p-3 font-bold text-stone-800">Rp ${Number(o.total).toLocaleString('id-ID')}</td>
+                    <td class="p-3 font-medium text-stone-700">${o.items || '-'}</td>
+                    <td class="p-3 font-bold text-stone-800">Rp ${Number(o.total || 0).toLocaleString('id-ID')}</td>
                     <td class="p-3">
                         <span class="text-[10px] bg-stone-100 p-1 rounded font-mono">
                             ${o.docs?.po ? '✓PO ' : ''}${o.docs?.sj ? '✓SJ ' : ''}${o.docs?.inv ? '✓INV ' : ''}${o.docs?.pajak ? '✓Tax' : ''}
@@ -471,7 +524,7 @@
                     <td class="p-3">${getStatusBadge(o.status)}</td>
                     <td class="p-3 text-center">
                         ${o.status === 'PENDING_FINANCE' ? `
-                            <button onclick="flagRedFlag('${o.id}')" class="text-red-600 hover:text-red-800 text-xs font-bold" title="Laporkan Red Flag / Retur">
+                            <button onclick="window.flagRedFlag('${o.id}')" class="text-red-600 hover:text-red-800 text-xs font-bold" title="Laporkan Red Flag / Retur">
                                 <i class="fa-solid fa-flag"></i> Red Flag
                             </button>
                         ` : '<span class="text-stone-400 text-[10px]">Tersinkron</span>'}
@@ -491,11 +544,11 @@
             tbody.innerHTML = orders.map(o => `
                 <tr class="hover:bg-amber-50/50">
                     <td class="p-3">
-                        <span class="font-bold text-stone-800">${o.poNumber}</span>
-                        <p class="text-stone-500">${o.vendor}</p>
+                        <span class="font-bold text-stone-800">${o.poNumber || '-'}</span>
+                        <p class="text-stone-500">${o.vendor || '-'}</p>
                     </td>
-                    <td class="p-3 font-medium text-stone-700">${o.items} <br><span class="text-[10px] text-amber-800 font-semibold">TOP: ${o.top}</span></td>
-                    <td class="p-3 font-bold text-stone-800">Rp ${Number(o.total).toLocaleString('id-ID')}</td>
+                    <td class="p-3 font-medium text-stone-700">${o.items || '-'} <br><span class="text-[10px] text-amber-800 font-semibold">TOP: ${o.top || '-'}</span></td>
+                    <td class="p-3 font-bold text-stone-800">Rp ${Number(o.total || 0).toLocaleString('id-ID')}</td>
                     <td class="p-3">
                         <span class="px-2 py-0.5 rounded text-[10px] font-bold ${o.docs?.po && o.docs?.sj && o.docs?.inv ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
                             ${o.docs?.po && o.docs?.sj && o.docs?.inv ? '✓ 3-Way Match Valid' : '⚠️ Berkas Tidak Lengkap'}
@@ -504,7 +557,7 @@
                     <td class="p-3">${getStatusBadge(o.status)}</td>
                     <td class="p-3 text-center space-x-1">
                         ${o.status === 'PENDING_FINANCE' ? `
-                            <button onclick="approvePayment('${o.id}', '${o.poNumber}')" class="bg-green-700 hover:bg-green-800 text-white text-[10px] font-bold px-2.5 py-1 rounded shadow">
+                            <button onclick="window.approvePayment('${o.id}', '${o.poNumber}')" class="bg-green-700 hover:bg-green-800 text-white text-[10px] font-bold px-2.5 py-1 rounded shadow">
                                 <i class="fa-solid fa-check mr-1"></i> Eksekusi Bayar
                             </button>
                         ` : ''}
@@ -528,10 +581,6 @@
             }
         }
 
-        // 3. ACTIONS & TRANSACTIONS
-        window.openModalPO = () => document.getElementById('modalPO').classList.remove('hidden');
-        window.closeModalPO = () => document.getElementById('modalPO').classList.add('hidden');
-
         // SUBMIT NEW PO (ADMIN PEMBELIAN)
         document.getElementById('formPO').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -553,7 +602,7 @@
                 await addDoc(collection(db, "orders"), {
                     poNumber, vendor, items, total, top, docs,
                     status: "PENDING_FINANCE",
-                    createdBy: auth.currentUser.email,
+                    createdBy: auth.currentUser?.email || 'Purchasing',
                     createdAt: serverTimestamp()
                 });
 
@@ -571,50 +620,6 @@
                 alert("Gagal menyimpan PO: " + err.message);
             }
         });
-
-        // APPROVE PAYMENT (ADMIN KEUANGAN)
-        window.approvePayment = async (orderId, poNum) => {
-            if (!confirm(`Konfirmasi pelunasan transfer untuk ${poNum}?`)) return;
-
-            try {
-                await updateDoc(doc(db, "orders", orderId), {
-                    status: "PAID",
-                    paidAt: serverTimestamp(),
-                    approvedBy: auth.currentUser.email
-                });
-
-                await addDoc(collection(db, "notifications"), {
-                    title: "Pembayaran Supplier Lunas",
-                    message: `${poNum} telah ditransfer oleh Keuangan sesuai TOP.`,
-                    sender: "Admin Keuangan",
-                    createdAt: serverTimestamp()
-                });
-            } catch (err) {
-                alert("Gagal memproses pembayaran: " + err.message);
-            }
-        };
-
-        // FLAG RED FLAG / RETUR
-        window.flagRedFlag = async (orderId) => {
-            const reason = prompt("Masukkan alasan Red Flag / Retur (Cth: Cokelat meleleh / Invoice tidak sesuai):");
-            if (!reason) return;
-
-            try {
-                await updateDoc(doc(db, "orders", orderId), {
-                    status: "RED_FLAG",
-                    redFlagReason: reason
-                });
-
-                await addDoc(collection(db, "notifications"), {
-                    title: "⚠️ Peringatan Red Flag Penagihan",
-                    message: `PO ditahan: ${reason}`,
-                    sender: auth.currentUser.email,
-                    createdAt: serverTimestamp()
-                });
-            } catch (err) {
-                alert("Gagal memperbarui status: " + err.message);
-            }
-        };
     </script>
 </body>
 </html>
